@@ -107,13 +107,19 @@ void LinkedList::print(){
 void LinkedList::printAlist() {
     
     Node *ptr = root;
+    int count = 0;
+    
+            if (count == 0) {
+                cout << ptr->someVertex->x_1 << " " << ptr->someVertex->y_1 << " ";
+                count++;
+            }
     
     if (root == NULL) //this link is entire list
         cout << "meow" << endl;
     else {
         ptr = ptr->next;
         while (ptr != NULL){
-            cout << ptr->someVertex->index << " ";
+            cout << ptr->someVertex->index << " " << ptr->dist << " ";
             ptr = ptr -> next;
         }
         cout << endl;

@@ -24,6 +24,8 @@ int main(int argc, const char * argv[])
     int partitionVertices(Vertex* [], int, int, int);
     int median3Vertices(Vertex* [],int,int);
     void swapVertices(int &, int &);
+    
+    int dist(Vertex*, Vertex*);
 
 /**sort and renumber all corener points
  an edge can not contain another vertice
@@ -56,7 +58,8 @@ else
         - since we know there is a max of 4, just print last one first then second to last?
      **/
     
-    string m, rectanglex, rectangley;
+    string m;
+    int rectanglex, rectangley;
     string val1, val2, val3, val4;
     int i1, i2, i3, i4;
     int numLine = 0;
@@ -226,7 +229,7 @@ else
         numLine++;
     }
     
-    AdjacencyList *neighbs = new AdjacencyList(vertexCounter);
+    AdjacencyList *neighbs = new AdjacencyList(vertexCounter+1); // plus one to account for 0th index that we don't use
     //Node* ptr1, ptr2,ptr3,ptr4;
 
     quicksortVertices(newVertexArray, 0, vertexCounter-1);
@@ -235,12 +238,17 @@ else
     for (int i = 0; i < vertexCounter; i++)
         newVertexArray[i]->index = i+1;
     
+    cout << " *** " << newVertexArray[0]->x_1 << " " << newVertexArray[0]->y_1 << endl;
+    cout << " *** " << newVertexArray[1]->x_1 << " " << newVertexArray[1]->y_1 << endl;
+    
     //cout << "printing stuffs OUT " << endl;
     // now that Vertices are sorted, let's put em in the adjacency list (the array part)
-    for (int i = 1; i <= vertexCounter; i++) { // NOTE: i = 1, THUS we want to have <= vertexCounter
-        neighbs->AList[i] = new LinkedList();
-        neighbs->AList[i]->insert(newVertexArray[i-1]);
-    }        
+    for (int i = 0; i <= vertexCounter; i++) { // NOTE: i = 1, THUS we want to have <= vertexCounter, JK
+        neighbs->AList[i] = new LinkedList(); // create LL for each index
+        // except we don't wanna insert a Vertex for index 0 because we don't have a Vertex 0
+        if (i != 0)
+            neighbs->AList[i]->insert(newVertexArray[i-1]);
+    }
     
     quicksort(myarray, 0, numRectangles-1);
     
@@ -256,17 +264,18 @@ else
     
     for (int i = 0; i < numRectangles; i++) // go through each rectangle and add vertices to it's LL by looking at it's corners
     {
+        //from j = 0 to 1
         for (int j = myarray[i]->corners[0]->index-1; j < myarray[i]->corners[1]->index; j++) {
             myarray[i]->Vertices->insert(newVertexArray[j]); // includes corner [0] & [1]
-            //myarray[i]->Vertices->print();
             if (myarray[i]->corners[1]->index != j+1) { // attempt at making sure we aren't adding right neighbors to top right corner
-                //cout << " add " << (newVertexArray[j+1]->index) << " as neighbor of " << j+1 << endl;
+                //calculate distance then insert
                 neighbs->AList[j+1]->insert(newVertexArray[j+1]);
                 cout << " just inserted: " << newVertexArray[j+1]->index << " as neighbor of " << j+1 << endl;
-             //   neighbs->AList[j+1]->print();//print function does not work on this
-                //cout << " THIS " << endl;
-               // neighbs->AList[j+1]->printAlist();
-                //cout << j+1 << " & " << neighbs->AList[j+1]->tail->someVertex->index << endl; // root doesn't have anything, tail is latest
+                neighbs->AList[j+1]->tail->dist = dist(neighbs->AList[j+1]->root->someVertex, newVertexArray[j+1]);
+                if (newVertexArray[j+1]->y_1 == rectangley) {
+                    neighbs->AList[j+2]->insert(newVertexArray[j]);
+                    neighbs->AList[j+2]->tail->dist = dist(neighbs->AList[j+2]->root->someVertex, newVertexArray[j]);
+                }
             }
         }
         
@@ -280,6 +289,8 @@ else
                 // as long as we aren't on the bottom right corner, add it's neighbor
                 if (myarray[i]->corners[2]->index != k) {// attempt at making sure we aren't adding bottom neighbor
                     neighbs->AList[AListInsert]->insert(newVertexArray[k]);
+                    cout << "2 just inserted: " << newVertexArray[k]->index << " as neihbor of " << AListInsert << endl;
+                    neighbs->AList[AListInsert]->tail->dist = dist(neighbs->AList[AListInsert]->root->someVertex, newVertexArray[k]);
                     //cout << AListInsert << " ^ " << newVertexArray[k]->index << " or " << neighbs->AList[AListInsert]->tail->someVertex->index <<  endl;
                     AListInsert = k+1;
                 }
@@ -291,8 +302,10 @@ else
             myarray[i]->Vertices->insert(newVertexArray[n]); // includes corner [3]
             if ((myarray[i]->corners[3]->index)-2 != n) {
                 neighbs->AList[n+2]->insert(newVertexArray[n]);
-                //cout << n+2 << " * " << newVertexArray[n]->index << " or " << neighbs->AList[AListInsert]->tail->someVertex->index << endl;
+                neighbs->AList[n+2]->tail->dist = dist(neighbs->AList[n+2]->root->someVertex, newVertexArray[n]);
+                cout << "3 just inserted: " << newVertexArray[n]->index << " as neihbor of " << n+2 << endl;
             }
+            // THIS IS ONE OF THE WEIRD CHECKS TO FIND CORNER CASES, THAT IS NOT CURRENTLY WORKING
             if ( newVertexArray[n]->y_1 == 0) {// if it is in the bottom row
                 //cout << " n's: " << n << " x == 0" << endl;
                 neighbs->AList[n+2]->insert(newVertexArray[n]);
@@ -305,21 +318,14 @@ else
                    myarray[i]->Vertices->insert(newVertexArray[p]);
                 if ((myarray[i]->corners[0]->index)-1 != p-1) { //off by a few, not checking corner[0]
                     neighbs->AList[anInsert]->insert(newVertexArray[p]);
-                    //cout << anInsert << " and " << newVertexArray[p]->index << " or " << neighbs->AList[AListInsert]->tail->someVertex->index << endl;
+                    cout << "4 inserted " << newVertexArray[p]->index << " as neihbor of " << anInsert << endl;
+                    neighbs->AList[anInsert]->tail->dist = dist(neighbs->AList[anInsert]->root->someVertex, newVertexArray[p]);
                     anInsert = p+1;
                 }
             }
         }
         
     }
-    
-//    for (int i = 0; i < vertexCounter; i++) {
-//        if (newVertexArray[i]->y_1 == 0) { //add the next one over to it's neighbor LL
-//            neighbs->AList[i+1]->insert(newVertexArray[i+1]);
-//        }
-//    }
-//    cout << "printing neighbs: " << endl;
-
 
     // PRINTING EACH RECTANGLES VERTICES //
  //   cout << "PRINTING VERTICES" << endl;
@@ -334,7 +340,7 @@ else
         myarray[i]->printCorners();
     }
     
-     for (int i = 1; i <+ vertexCounter; i++) {
+     for (int i = 1; i <= vertexCounter; i++) {
         cout << i << " ";
         neighbs->AList[i]->printAlist();
     }   

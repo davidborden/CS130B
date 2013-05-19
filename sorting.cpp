@@ -101,3 +101,19 @@ void swap(Rectangle* &val1, Rectangle* &val2)
     val1 = val2;
     val2 = temp;
 }
+
+int dist(Vertex* one, Vertex* two) {
+    if ( one->x_1 == two->x_1) {
+        
+        if (abs(one->y_1 - two->y_1) == 0)
+            cout << " IT IS 0" << endl;
+
+        return abs(one->y_1 - two->y_1);
+    }
+            else {
+                if(abs(one->x_1 - two->x_1) == 0)
+                   cout << " THIS IS ALSO 0" << endl;
+                
+                return abs(one->x_1 - two->x_1);
+            }
+}
